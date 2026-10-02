@@ -7,12 +7,10 @@
   canvas { display: block; max-width: 100%; margin-top: 1rem; }
   pre { white-space: pre-wrap; }
   #audio { margin-left: 1rem; font-size: 14px; color: #aaa; }
-  #astate { font: 13px ui-monospace, monospace; color: #aaa; margin-top: .5rem; }
 </style>
 
 <button id="start">Start Victor 9000</button>
 <label id="audio">Volume <input id="vol" type="range" min="0" max="8" step="0.25" value="4"></label>
-<div id="astate">audio: off</div>
 <canvas id="canvas" tabindex="0"
         oncontextmenu="event.preventDefault()"></canvas>
 <pre id="log"></pre>
@@ -135,7 +133,6 @@ const AUDIO_TARGET_MS = 120;
 const MAX_STEPS = 4, BUDGET_MS = 12;
 const realRAF = window.requestAnimationFrame.bind(window);
 let pending = null, scheduled = false;
-const stats = { steps: 0, longFrames: 0, maxMs: 0 };
 window.requestAnimationFrame = cb => {
   pending = cb;
   if (!scheduled) { scheduled = true; realRAF(pump); }
@@ -151,25 +148,9 @@ function pump(t) {
     if (n > 0 && performance.now() - t0 > BUDGET_MS) break;
     const cb = pending; pending = null;
     cb(t);                                          // MAME re-arms via our shim
-    stats.steps++;
   }
-  const ms = performance.now() - t0;
-  if (ms > stats.maxMs) stats.maxMs = ms;
-  if (ms > 16) stats.longFrames++;
   if (pending && !scheduled) { scheduled = true; realRAF(pump); }
 }
-
-// Live stats: emulation speed, audio queue depth, underruns, slow frames.
-setInterval(() => {
-  const el = document.getElementById("astate");
-  if (!audio.ctx) return;
-  const q = audio.queued();
-  el.textContent = `audio ${audio.ctx.state} @ ${audio.ctx.sampleRate} Hz | ` +
-    `speed ${Math.round(stats.steps / 60 * 100)}% | ` +
-    `queue ${q < 0 ? "-" : Math.round(q / audio.ctx.sampleRate * 1000)} ms | ` +
-    `underruns ${audio.underruns} | frames >16ms ${stats.longFrames} (max ${stats.maxMs.toFixed(0)} ms)`;
-  stats.steps = 0; stats.maxMs = 0;
-}, 1000);
 
 document.getElementById("start").onclick = async function () {
   this.disabled = true;

@@ -178,6 +178,7 @@ document.getElementById("start").onclick = async function () {
         "-window",
         "-resolution", "800x600",
         "-skip_gameinfo",
+        "-frameskip", "3",
         "-nothrottle",            // pacing is done by the audio-driven pump above
         // MAME defaults to 48 kHz; the JS sink plays whatever it gets at the
         // context's rate, so mismatches overflow its ring buffer and drop audio.
